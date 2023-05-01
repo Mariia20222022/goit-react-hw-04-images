@@ -19,7 +19,7 @@ function MakeGalleryItem({ url, tags, onClick, getLargeImg }) {
 }
 MakeGalleryItem.propTypes = {
   url: PropTypes.string.isRequired,
-  tag: PropTypes.string.isRequired,
+  tags: PropTypes.string.isRequired,
   onClick: PropTypes.func.isRequired,
   getLargeImg: PropTypes.func.isRequired,
 };

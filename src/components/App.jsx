@@ -1,46 +1,39 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import MakeGallery from './ImageGallery/ImageGallery';
 import Searchbar from './Searchbar/Searchbar';
 import Modal from './Modal/Modal';
 
-class App extends Component {
-  state = {
-    searchQuery: '',
-    currentPage: 1,
-    showModal: false,
+function App() {
+  const [searchQuery, setSearchQuery] = useState(``);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showModal, setShowModal] = useState(false);
+  const [largeImageURL, setLargeImageURL] = useState('');
+  const handleFormSubmit = searchQuery => {
+    setSearchQuery(searchQuery);
+    setCurrentPage(1);
   };
-
-  handleFormSubmit = searchQuery => {
-    this.setState({ searchQuery, currentPage: 1 });
+  const handleLoadMore = () => {
+    setCurrentPage(prevPage => prevPage + 1);
   };
-
-  handleLoadMore = () => {
-    this.setState(prevState => ({ currentPage: prevState.currentPage + 1 }));
+  const toggleModal = () => {
+    setShowModal(prevModal => !prevModal);
   };
-  toggleModal = () => {
-    this.setState(({ showModal }) => ({ showModal: !showModal }));
+  const getLargeImg = largeImageURL => {
+    setLargeImageURL(largeImageURL);
+    toggleModal();
   };
-
-  getLargeImg = largeImageURL => {
-    this.setState({ largeImageURL });
-    this.toggleModal();
-  };
-  render() {
-    const { searchQuery, currentPage, largeImageURL, showModal } = this.state;
-
-    return (
-      <div>
-        <Searchbar onSubmit={this.handleFormSubmit} />
-        <MakeGallery
-          searchQuery={searchQuery}
-          currentPage={currentPage}
-          onLoadMore={this.handleLoadMore}
-          getLargeImg={this.getLargeImg}
-        />
-        {showModal && <Modal url={largeImageURL} onClose={this.toggleModal} />}
-      </div>
-    );
-  }
+  return (
+    <div>
+      <Searchbar onSubmit={handleFormSubmit} />
+      <MakeGallery
+        searchQuery={searchQuery}
+        currentPage={currentPage}
+        onLoadMore={handleLoadMore}
+        getLargeImg={getLargeImg}
+      />
+      {showModal && <Modal url={largeImageURL} onClose={toggleModal} />}
+    </div>
+  );
 }
 
 export default App;

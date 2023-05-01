@@ -1,114 +1,105 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect } from 'react';
 import MakeGalleryItem from 'components/ImageGalleryItem/ImageGalleryItem';
-import { fetchPhoto } from 'components/Services/Api';
+import { fetchPhoto } from 'components/Searchbar/Services/Api';
 import css from './ImageGallery.module.css';
 import LoadMoreButton from 'components/Button/Button';
 import Modal from 'components/Modal/Modal';
 import Loader from 'components/Circles/Circles';
 import PropTypes from 'prop-types';
-class MakeGallery extends Component {
-  static propTypes = {
-    searchQuery: PropTypes.string.isRequired,
-    currentPage: PropTypes.number.isRequired,
-    onLoadMore: PropTypes.func.isRequired,
-    getLargeImg: PropTypes.func.isRequired,
-  };
-  state = {
-    images: [],
-    status: 'idle',
-    selectedImageUrl: null,
-  };
 
-  componentDidUpdate(prevProps, prevState) {
-    if (prevProps.searchQuery !== this.props.searchQuery) {
-      this.fetchLoad();
+function MakeGallery({ searchQuery, currentPage, onLoadMore, getLargeImg }) {
+  const [images, setImages] = useState([]);
+  const [status, setStatus] = useState('idle');
+  const [selectedImageUrl, setSelectedImageUrl] = useState(null);
+  const [page, setPage] = useState(currentPage);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (searchQuery !== '') {
+      setImages([]);
+      setPage(1);
     }
-    if (
-      prevProps.currentPage !== this.props.currentPage &&
-      this.props.currentPage > 1
-    ) {
-      this.fetchLoadMore();
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const fetchLoad = async () => {
+      setLoading(true);
+      setStatus('pending');
+      try {
+        const response = await fetchPhoto(searchQuery, page);
+        setImages(prevImages => [...prevImages, ...response.hits]);
+        setStatus('resolved');
+      } catch (error) {
+        setStatus('rejected');
+      }
+      setLoading(false);
+    };
+
+    fetchLoad();
+  }, [searchQuery, page]);
+
+  const handleClickLoadMore = async () => {
+    if (!loading) {
+      setLoading(true);
+      const nextPage = page + 1;
+      try {
+        const response = await fetchPhoto(searchQuery, nextPage);
+        setImages(prevImages => [...prevImages, ...response.hits]);
+        setPage(nextPage);
+        onLoadMore(nextPage);
+      } catch (error) {
+        setStatus('rejected');
+      }
+      setLoading(false);
     }
-  }
-  handleClickLoadMore = () => {
-    this.props.onLoadMore();
-
-    this.setState(prevState => ({ currentPage: prevState.currentPage + 1 }));
   };
 
-  fetchLoad = () => {
-    const { searchQuery, currentPage } = this.props;
-    this.setState({ status: 'pending' });
-    fetchPhoto(searchQuery, currentPage)
-      .then(response => {
-        this.setState({
-          images: response.hits,
-          status: 'resolved',
-        });
-      })
-      .catch(error => this.setState({ status: 'rejected' }));
+  const handleOpenModal = url => {
+    setSelectedImageUrl(url);
   };
 
-  fetchLoadMore = () => {
-    const { searchQuery, currentPage } = this.props;
-    this.setState({ status: 'pending' });
-    fetchPhoto(searchQuery, currentPage)
-      .then(response => {
-        this.setState(prevState => ({
-          images: [...prevState.images, ...response.hits],
-          status: 'resolved',
-        }));
-      })
-      .catch(error => this.setState({ status: 'rejected' }));
+  const handleCloseModal = () => {
+    setSelectedImageUrl(null);
   };
 
-  handleClick = () => {
-    this.props.onLoadMore();
-  };
-
-  handleOpenModal = url => {
-    this.setState({ selectedImageUrl: url });
-  };
-
-  handleCloseModal = () => {
-    this.setState({ selectedImageUrl: null });
-  };
-
-  render() {
-    const { images, status, selectedImageUrl } = this.state;
-
-    return (
-      <div className={css.wrapper}>
-        {status === 'pending' && <Loader />}
-        {status === 'rejected' && (
-          <div>Something went wrong. Please try again later.</div>
-        )}
-        {status === 'resolved' && (
-          <>
-            <ul className={css.gallery}>
-              {images.map(({ id, webformatURL, tags, largeImageURL }) => (
-                <MakeGalleryItem
-                  key={id}
-                  url={webformatURL}
-                  tags={tags}
-                  onClick={this.handleOpenModal}
-                  getLargeImg={this.props.getLargeImg}
-                />
-              ))}
-            </ul>
-            {selectedImageUrl && (
-              <Modal onClose={this.handleCloseModal}>
-                <img src={selectedImageUrl} alt="Selected" />
-              </Modal>
-            )}
-            {images.length > 0 && (
-              <LoadMoreButton onClick={this.handleClickLoadMore} />
-            )}
-          </>
-        )}
-      </div>
-    );
-  }
+  return (
+    <div className={css.wrapper}>
+      {status === 'pending' && <Loader />}
+      {status === 'rejected' && (
+        <div>Something went wrong. Please try again later.</div>
+      )}
+      {status === 'resolved' && (
+        <>
+          <ul className={css.gallery}>
+            {images.map(({ id, webformatURL, tags, largeImageURL }) => (
+              <MakeGalleryItem
+                key={id}
+                url={webformatURL}
+                tags={tags}
+                onClick={handleOpenModal}
+                getLargeImg={getLargeImg}
+              />
+            ))}
+          </ul>
+          {selectedImageUrl && (
+            <Modal onClose={handleCloseModal}>
+              <img src={selectedImageUrl} alt="Selected" />
+            </Modal>
+          )}
+          {images.length > 0 && (
+            <LoadMoreButton onClick={handleClickLoadMore} />
+          )}
+        </>
+      )}
+    </div>
+  );
 }
+
+MakeGallery.propTypes = {
+  searchQuery: PropTypes.string.isRequired,
+  currentPage: PropTypes.number.isRequired,
+  onLoadMore: PropTypes.func.isRequired,
+  getLargeImg: PropTypes.func.isRequired,
+};
 
 export default MakeGallery;

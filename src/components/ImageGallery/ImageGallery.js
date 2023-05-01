@@ -74,7 +74,10 @@ function MakeGallery({ searchQuery, currentPage, onLoadMore, getLargeImg }) {
             </Modal>
           )}
           {images.length > 0 && (
-            <LoadMoreButton onClick={handleClickLoadMore} />
+            <>
+              <LoadMoreButton onClick={handleClickLoadMore} />
+              {loading && <Loader />}
+            </>
           )}
         </>
       )}

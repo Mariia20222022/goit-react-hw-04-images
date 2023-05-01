@@ -15,16 +15,14 @@ function MakeGallery({ searchQuery, currentPage, onLoadMore, getLargeImg }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (searchQuery !== '') {
-      setImages([]);
-      setPage(1);
+    if (searchQuery === '') {
+      return;
     }
-  }, [searchQuery]);
 
-  useEffect(() => {
+    setLoading(true);
+    setStatus('pending');
+
     const fetchLoad = async () => {
-      setLoading(true);
-      setStatus('pending');
       try {
         const response = await fetchPhoto(searchQuery, page);
         setImages(prevImages => [...prevImages, ...response.hits]);
@@ -37,23 +35,12 @@ function MakeGallery({ searchQuery, currentPage, onLoadMore, getLargeImg }) {
 
     fetchLoad();
   }, [searchQuery, page]);
-
   const handleClickLoadMore = async () => {
-    if (!loading) {
-      setLoading(true);
-      const nextPage = page + 1;
-      try {
-        const response = await fetchPhoto(searchQuery, nextPage);
-        setImages(prevImages => [...prevImages, ...response.hits]);
-        setPage(nextPage);
-        onLoadMore(nextPage);
-      } catch (error) {
-        setStatus('rejected');
-      }
-      setLoading(false);
-    }
+    setPage(prevPage => prevPage + 1);
   };
-
+  useEffect(() => {
+    setPage(currentPage);
+  }, [currentPage]);
   const handleOpenModal = url => {
     setSelectedImageUrl(url);
   };
